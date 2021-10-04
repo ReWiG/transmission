@@ -8,10 +8,7 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include "tr-macros.h"
 
 /**
  * @addtogroup utils Utilities
@@ -29,8 +26,7 @@ typedef struct tr_option
     char const* shortName; /* short form */
     bool has_arg; /* 0 for no argument, 1 for argument */
     char const* argName; /* argument's description for tr_getopt_usage() */
-}
-tr_option;
+} tr_option;
 
 enum
 {
@@ -51,9 +47,5 @@ int tr_getopt(char const* summary, int argc, char const* const* argv, tr_option 
 
 /** @brief prints the `Usage' help section to stdout */
 void tr_getopt_usage(char const* appName, char const* description, tr_option const* opts);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 
 /** @} */

@@ -12,6 +12,7 @@
 #error only libtransmission should #include this header.
 #endif
 
+#include "tr-macros.h"
 #include "transmission.h"
 #include "variant.h"
 
@@ -26,8 +27,7 @@ typedef struct tr_magnet_info
 
     int webseedCount;
     char** webseeds;
-}
-tr_magnet_info;
+} tr_magnet_info;
 
 tr_magnet_info* tr_magnetParse(char const* uri);
 

@@ -12,6 +12,8 @@
 #error only libtransmission should #include this header.
 #endif
 
+#include "tr-macros.h"
+
 struct tr_address;
 
 typedef struct tr_blocklistFile tr_blocklistFile;

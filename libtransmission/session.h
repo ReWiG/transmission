@@ -14,9 +14,18 @@
 
 #define TR_NAME "Transmission"
 
+#include <cstring> // memcmp()
+#include <list>
+#include <map>
+#include <unordered_set>
+#include <vector>
+
+#include <event2/util.h> // evutil_ascii_strcasecmp()
+
 #include "bandwidth.h"
 #include "bitfield.h"
 #include "net.h"
+#include "tr-macros.h"
 #include "utils.h"
 #include "variant.h"
 
@@ -25,16 +34,14 @@ typedef enum
     TR_NET_OK,
     TR_NET_ERROR,
     TR_NET_WAIT
-}
-tr_tristate_t;
+} tr_tristate_t;
 
 typedef enum
 {
     TR_AUTO_SWITCH_UNUSED,
     TR_AUTO_SWITCH_ON,
     TR_AUTO_SWITCH_OFF,
-}
-tr_auto_switch_state_t;
+} tr_auto_switch_state_t;
 
 enum
 {
@@ -50,6 +57,7 @@ struct tr_address;
 struct tr_announcer;
 struct tr_announcer_udp;
 struct tr_bindsockets;
+struct tr_blocklistFile;
 struct tr_cache;
 struct tr_fdInfo;
 struct tr_device_info;
@@ -91,6 +99,22 @@ struct tr_turtle_info
 
     /* recent action that was done by turtle's automatic switch */
     tr_auto_switch_state_t autoTurtleState;
+};
+
+struct CompareHash
+{
+    bool operator()(uint8_t const* const a, uint8_t const* const b) const
+    {
+        return std::memcmp(a, b, SHA_DIGEST_LENGTH) < 0;
+    }
+};
+
+struct CompareHashString
+{
+    bool operator()(char const* const a, char const* const b) const
+    {
+        return evutil_ascii_strcasecmp(a, b) < 0;
+    }
 };
 
 /** @brief handle to an active libtransmission session */
@@ -174,8 +198,10 @@ struct tr_session
     int peerSocketTOS;
     char* peer_congestion_algorithm;
 
-    int torrentCount;
-    tr_torrent* torrentList;
+    std::unordered_set<tr_torrent*> torrents;
+    std::map<int, tr_torrent*> torrentsById;
+    std::map<uint8_t const*, tr_torrent*, CompareHash> torrentsByHash;
+    std::map<char const*, tr_torrent*, CompareHashString> torrentsByHashString;
 
     char* torrentDoneScript;
 
@@ -188,7 +214,7 @@ struct tr_session
 
     struct tr_device_info* downloadDir;
 
-    struct tr_list* blocklists;
+    std::list<tr_blocklistFile*> blocklists;
     struct tr_peerMgr* peerMgr;
     struct tr_shared* shared;
 
@@ -220,8 +246,8 @@ struct tr_session
 
     uint16_t idleLimitMinutes;
 
-    struct tr_bindinfo* public_ipv4;
-    struct tr_bindinfo* public_ipv6;
+    struct tr_bindinfo* bind_ipv4;
+    struct tr_bindinfo* bind_ipv6;
 };
 
 static inline tr_port tr_sessionGetPublicPeerPort(tr_session const* session)
@@ -251,7 +277,7 @@ struct tr_bindsockets* tr_sessionGetBindSockets(tr_session*);
 
 int tr_sessionCountTorrents(tr_session const* session);
 
-tr_torrent** tr_sessionGetTorrents(tr_session* session, int* setme_n);
+std::vector<tr_torrent*> tr_sessionGetTorrents(tr_session* session);
 
 enum
 {
@@ -260,7 +286,7 @@ enum
 
 static inline bool tr_isSession(tr_session const* session)
 {
-    return session != NULL && session->magicNumber == SESSION_MAGIC_NUMBER;
+    return session != nullptr && session->magicNumber == SESSION_MAGIC_NUMBER;
 }
 
 static inline bool tr_isPreallocationMode(tr_preallocation_mode m)
@@ -317,6 +343,9 @@ void tr_sessionSetAltSpeed_Bps(tr_session*, tr_direction, unsigned int Bps);
 
 bool tr_sessionGetActiveSpeedLimit_Bps(tr_session const* session, tr_direction dir, unsigned int* setme);
 
-void tr_sessionGetNextQueuedTorrents(tr_session* session, tr_direction dir, size_t numwanted, tr_ptrArray* setme);
+std::vector<tr_torrent*> tr_sessionGetNextQueuedTorrents(tr_session* session, tr_direction dir, size_t numwanted);
 
 int tr_sessionCountQueueFreeSlots(tr_session* session, tr_direction);
+
+void tr_sessionAddTorrent(tr_session* session, tr_torrent* tor);
+void tr_sessionRemoveTorrent(tr_session* session, tr_torrent* tor);
