@@ -369,7 +369,7 @@ export class Inspector extends EventTarget {
     if (torrents.length === 0) {
       string = none;
     } else {
-      const get = (t) => t.getSquential();
+      const get = (t) => t.getSequential();
       const first = get(torrents[0]);
 	  string = first;
       if (!torrents.every((t) => get(t) === first)) {
