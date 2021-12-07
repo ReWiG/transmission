@@ -471,7 +471,7 @@ static void max_peers_spun_cb(GtkSpinButton* s, struct DetailsImpl* di)
     torrent_set_int(di, TR_KEY_peer_limit, gtk_spin_button_get_value_as_int(s));
 }
 
-static void sequential_toggled_cb(GtkToggleButton* tb, gpointer d)
+static void sequential_toggled_cb(GtkToggleButton* tb, struct DetailsImpl* d)
 {
     torrent_set_bool(d, TR_KEY_sequentialDownload, gtk_toggle_button_get_active(tb));
 }
